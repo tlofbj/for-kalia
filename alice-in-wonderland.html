@@ -83,9 +83,14 @@
         --face-scale: 0.9;
       }
 
-      /* An edition can set titles and headings in the playful face. */
-      :root[data-headings="playful"] {
+      /* The playful style, which an edition can opt into: cartoon-font
+         headings and square "stamp" buttons that press in when clicked. */
+      :root[data-style="playful"] {
         --font-heading: var(--font-playful);
+        --stamp-border: 2px solid var(--color-ink);
+        --stamp-shadow: var(--color-accent);
+        --stamp-offset: 4px;
+        --stamp-duration: 120ms;
       }
     }
 
@@ -823,9 +828,46 @@
         font-style: italic;
       }
 
+      /* --- Playful style ------------------------------------------------ */
+
       /* The playful face has no italics; upright reads better than a slanted fake. */
-      :root[data-headings="playful"] :is(.chapter__title, .running-head, .pager__title) {
+      :root[data-style="playful"] :is(.chapter__title, .running-head, .pager__title) {
         font-style: normal;
+      }
+
+      /* Stamps: square, white, with a hard shadow. They lift and tilt a little
+         on hover and press flat into the page when clicked. */
+      :root[data-style="playful"] :is(.title-page__action, .greeting__button, .pager__link) {
+        border: var(--stamp-border);
+        border-radius: 0;
+        background: var(--color-surface);
+        color: var(--color-ink);
+        font-family: var(--font-playful);
+        box-shadow: var(--stamp-offset) var(--stamp-offset) 0 var(--stamp-shadow);
+        transition:
+          translate var(--stamp-duration) var(--ease),
+          rotate var(--stamp-duration) var(--ease),
+          box-shadow var(--stamp-duration) var(--ease);
+      }
+      :root[data-style="playful"] :is(.title-page__action, .greeting__button, .pager__link):hover {
+        translate: -2px -2px;
+        rotate: -1deg;
+        box-shadow: calc(var(--stamp-offset) + 2px) calc(var(--stamp-offset) + 2px) 0 var(--stamp-shadow);
+      }
+      :root[data-style="playful"] :is(.title-page__action, .greeting__button, .pager__link):active {
+        translate: var(--stamp-offset) var(--stamp-offset);
+        rotate: 0deg;
+        box-shadow: 0 0 0 var(--stamp-shadow);
+      }
+      :root[data-style="playful"] .title-page__action { font-size: 1.05rem; font-weight: 600; }
+      :root[data-style="playful"] .pager__link--next:hover { rotate: 1deg; }
+
+      /* Smaller controls go square too; the chosen option becomes a little stamp. */
+      :root[data-style="playful"] :is(.icon-button, .segmented, .segmented__option, .stepper) {
+        border-radius: 0;
+      }
+      :root[data-style="playful"] .segmented__option[aria-pressed="true"] {
+        box-shadow: inset 0 0 0 2px var(--color-ink), 3px 3px 0 var(--stamp-shadow);
       }
     }
 
