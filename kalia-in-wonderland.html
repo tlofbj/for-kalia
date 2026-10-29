@@ -10,7 +10,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..600;1,400..600&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..600;1,400..600&family=Mali:wght@400;600&display=swap">
 
   <style>
     /*
@@ -47,6 +47,7 @@
         /* Type */
         --font-serif: "EB Garamond", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
         --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+        --font-playful: "Mali", "Chalkboard SE", "Comic Sans MS", var(--font-sans); /* Mali has the ʻokina */
         --font-body: var(--font-serif);
         --font-ui: var(--font-sans);
         --font-scale: 1;       /* set by the "Text size" setting */
@@ -184,18 +185,27 @@
         text-align: center;
       }
 
-      .title-page__begin {
-        justify-self: center;
+      .title-page__actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.75rem;
         margin-top: 1.5rem;
+      }
+
+      .title-page__action {
         padding: 0.6em 1.4em;
         border: 1px solid var(--color-rule);
         border-radius: 999px;
         font-family: var(--font-ui);
         font-size: 0.95rem;
         text-decoration: none;
+        background: transparent;
+        cursor: pointer;
         transition: border-color var(--duration), color var(--duration);
       }
-      .title-page__begin:hover { border-color: var(--color-accent); color: var(--color-accent); }
+      .title-page__action:hover { border-color: var(--color-accent); color: var(--color-accent); }
+      .title-page__action[hidden] { display: none; }
 
       .ornament {
         display: flex;
@@ -706,10 +716,11 @@
       /* --- Greeting ------------------------------------------------------ */
 
       .greeting {
-        width: min(24rem, calc(100vw - 2rem));
+        width: min(25rem, calc(100vw - 2rem));
         padding: 2rem 1.75rem 1.75rem;
         border: 1px solid var(--color-rule);
-        border-radius: var(--radius);
+        border-radius: 2rem;
+        font-family: var(--font-playful);
         background: var(--color-surface);
         color: var(--color-ink);
         box-shadow: 0 1.5rem 4rem var(--color-shadow);
@@ -718,39 +729,35 @@
       .greeting::backdrop { background: rgb(0 0 0 / 0.35); }
 
       .greeting__title {
-        margin: 0.75rem 0 0.5rem;
-        font-family: var(--font-serif);
-        font-size: 2rem;
-        font-weight: 400;
-        font-style: italic;
-        line-height: 1.15;
+        margin: 0.75rem 0 0.75rem;
+        font-size: 1.75rem;
+        font-weight: 600;
+        line-height: 1.25;
         text-wrap: balance;
       }
 
-      .greeting__message {
-        margin: 0 0 1.5rem;
-        font-family: var(--font-serif);
-        font-size: 1.25rem;
+      .greeting__message,
+      .greeting__signature {
+        margin: 0 0 1.25rem;
+        font-size: 1.05rem;
+        line-height: 1.6;
+        text-wrap: pretty;
       }
 
       .greeting__signature {
-        margin: -0.75rem 0 1.5rem;
-        font-family: var(--font-serif);
-        font-size: 1.05rem;
-        font-style: italic;
-        line-height: 1.4;
-        white-space: pre-line; /* the signature's own line breaks */
-        color: var(--color-ink-muted);
+        margin-bottom: 1.5rem;
+        white-space: pre-line; /* keep the sign-off's line breaks */
       }
 
       .greeting__button {
-        padding: 0.65em 1.6em;
+        padding: 0.15em 1.1em;
         border: 0;
         border-radius: 999px;
         background: var(--color-accent);
         color: var(--color-surface);
-        font-family: var(--font-ui);
-        font-size: 0.95rem;
+        font-family: var(--font-serif);
+        font-size: 1.75rem;
+        line-height: 1.3;
         cursor: pointer;
       }
 
@@ -861,7 +868,7 @@
         }
 
         :root { color-scheme: light; --color-paper: #fff; --color-ink: #000; }
-        .toolbar, .progress, .panel, .pager, .skip-link, .title-page__begin,
+        .toolbar, .progress, .panel, .pager, .skip-link, .title-page__actions,
         .greeting, .confetti { display: none; }
 
         .book {
@@ -918,6 +925,12 @@
           clearTimeout(timer);
           timer = setTimeout(callback, wait);
         };
+      }
+
+      /** How far down the page the reader has scrolled, from 0 to 1. */
+      function scrollFraction() {
+        const scrollable = document.documentElement.scrollHeight - innerHeight;
+        return scrollable > 0 ? clamp(scrollY / scrollable, 0, 1) : 0;
       }
 
       /** Creates an element with an optional class, text, attributes and children. */
@@ -1202,7 +1215,8 @@
       /**
        * Remembers the reader's place as "block N, this far into it" rather than
        * as a pixel offset, so the place survives reflows (a new text size or
-       * typeface) and reloads.
+       * typeface). Places inside the story are saved for the next visit;
+       * the book never jumps there by itself (see ContinueReading).
        */
       class ReadingPosition {
         #blocks;
@@ -1243,7 +1257,7 @@
           const index = this.#firstBlockEndingBelow(top);
           if (index === -1) return null;
           const { top: blockTop, height } = this.#blocks[index].getBoundingClientRect();
-          return { index, offset: height > 0 ? (top - blockTop) / height : 0, hash: location.hash };
+          return { index, offset: height > 0 ? (top - blockTop) / height : 0 };
         }
 
         /** Scrolls back to a place produced by capture(). */
@@ -1256,18 +1270,21 @@
           this.#latest = place;
         }
 
+        /**
+         * Saves the current place with how far through the book it is. Only
+         * places inside a chapter count, so looking at the title page or the
+         * contents never overwrites where the reader got to.
+         */
         save() {
-          this.#store.set("position", this.capture());
+          const place = this.capture();
+          if (!place || !this.#blocks[place.index].closest(".chapter")) return;
+          this.#store.set("position", { ...place, progress: scrollFraction() });
         }
 
-        /**
-         * Returns to the place saved last visit — unless the reader arrived
-         * through a link to somewhere else in the book, which takes priority.
-         */
-        restoreSaved() {
-          const saved = this.#store.get("position");
-          const arrivedViaNewLink = location.hash && location.hash !== saved?.hash;
-          if (!arrivedViaNewLink) this.restore(saved);
+        /** The place saved on an earlier visit, or null. */
+        get saved() {
+          const place = this.#store.get("position");
+          return Number.isInteger(place?.index) && this.#blocks[place.index] ? place : null;
         }
 
         /** Binary search: blocks are stacked top to bottom in reading order. */
@@ -1302,8 +1319,7 @@
         }
 
         #render() {
-          const scrollable = document.documentElement.scrollHeight - innerHeight;
-          const fraction = scrollable > 0 ? clamp(scrollY / scrollable, 0, 1) : 0;
+          const fraction = scrollFraction();
           this.bar.style.setProperty("--progress", fraction.toFixed(4));
           this.label.textContent = `${Math.round(fraction * 100)}%`;
         }
@@ -1377,17 +1393,29 @@
         }
       }
 
+      /** Offers a way back to the place saved on an earlier visit, with how far in it was. */
+      class ContinueReading {
+        constructor(button, position) {
+          const saved = position.saved;
+          if (!saved) return;
+          const percent = Number.isFinite(saved.progress) ? ` · ${Math.round(saved.progress * 100)}%` : "";
+          button.textContent = `Continue reading${percent}`;
+          button.hidden = false;
+          button.addEventListener("click", () => position.restore(saved));
+        }
+      }
+
       /**
-       * A welcome note, with confetti, for a reader who opens the book at its
-       * title page. Its words come from <meta name="greeting-title">,
-       * <meta name="greeting-message"> and an optional <meta name="greeting-signature">;
-       * an edition without a greeting title shows nothing.
-       * Returning readers are taken back to their place, so they aren't greeted again.
+       * A welcome note, with confetti, shown when the book opens at its title
+       * page. Its words come from <meta name="greeting-title">, and optionally
+       * greeting-message, greeting-signature and greeting-button (the close
+       * button's label); an edition without a greeting title shows nothing.
        */
       class Greeting {
         #title;
         #message;
         #signature;
+        #buttonLabel;
         #confetti;
 
         constructor(confetti, root = document) {
@@ -1395,11 +1423,15 @@
           this.#title = meta("title");
           this.#message = meta("message");
           this.#signature = meta("signature");
+          this.#buttonLabel = meta("button") ?? "Close";
           this.#confetti = confetti;
         }
 
-        showIfAtTop() {
+        async showIfAtTop() {
           if (!this.#title || scrollY > 40) return;
+          // Load the note's handwriting font first, so it never flashes in a fallback.
+          const font = getComputedStyle(document.documentElement).getPropertyValue("--font-playful");
+          await document.fonts.load(`600 1em ${font}`, this.#title).catch(() => {});
           const dialog = this.#createDialog();
           document.body.append(dialog);
           dialog.addEventListener("close", () => dialog.remove());
@@ -1419,7 +1451,11 @@
             createElement("span", { className: "ornament__suit--red", text: "♦" }),
           ]);
           const form = createElement("form", { attributes: { method: "dialog" } }, [
-            createElement("button", { className: "greeting__button", text: "Start reading", attributes: { autofocus: "" } }),
+            createElement("button", {
+              className: "greeting__button",
+              text: this.#buttonLabel,
+              attributes: { autofocus: "", "aria-label": "Close" },
+            }),
           ]);
           return createElement("dialog", { className: "greeting", attributes: { "aria-labelledby": "greeting-title" } }, [
             ornament,
@@ -1612,6 +1648,16 @@
           };
         }
 
+        /**
+         * Opens the book at its title page every time: drops any #chapter
+         * link from the address before the browser can jump to it, and stops
+         * the browser restoring an old scroll position on reload.
+         */
+        openAtTop() {
+          history.scrollRestoration = "manual";
+          if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+        }
+
         /** Applies saved appearance settings. Safe to call before <body> exists. */
         applySettings() {
           for (const setting of Object.values(this.settings)) setting.apply();
@@ -1652,12 +1698,9 @@
           for (const setting of [fontScale, typeface]) {
             setting.addEventListener("change", () => position.restore(position.latest));
           }
-          history.scrollRestoration = "manual";
+          new ContinueReading(find("#continue-reading"), position);
           const greeting = new Greeting(new Confetti());
-          document.fonts.ready.then(() => {
-            position.restoreSaved();
-            greeting.showIfAtTop();
-          });
+          document.fonts.ready.then(() => greeting.showIfAtTop());
 
           const navigator = new ChapterNavigator(book, tracker);
           new KeyboardShortcuts()
@@ -1670,6 +1713,7 @@
       }
 
       const app = new ReaderApp();
+      app.openAtTop();
       app.applySettings();
       document.addEventListener("DOMContentLoaded", () => app.start(), { once: true });
     })();
@@ -1757,7 +1801,10 @@
       </h1>
       <p class="title-page__author">Adapted by Tata Li from Lewis Carroll</p>
       <p class="title-page__edition">The Millennium Fulcrum Edition 3.0</p>
-      <a class="title-page__begin" href="#chapter-1">Begin reading</a>
+      <div class="title-page__actions">
+        <a class="title-page__action" href="#chapter-1">Start reading</a>
+        <button class="title-page__action" id="continue-reading" type="button" hidden>Continue reading</button>
+      </div>
     </header>
 
     <nav class="contents" aria-labelledby="contents-title">
