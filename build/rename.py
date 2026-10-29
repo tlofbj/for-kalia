@@ -55,10 +55,10 @@ PAGE_FIXES = [
 # Tata Li's credit. Applied after RENAMES, so patterns use the new names.
 GIFT_DETAILS = [
     (r'<meta name="description" content="[^"]*">',
-     '<meta name="description" content="Kaliʻa’s wonderous adventure, adapted by Tata Li.">'),
+     '<meta name="description" content="Kaliʻa’s Wondrous Adventure, adapted by Tata Li.">'),
     (r"Kaliʻa’s Adventures <span class=\"title-page__connective\">in</span> Wonderland",
-     "Kaliʻa’s wonderous adventure"),
-    (r"Kaliʻa’s Adventures in Wonderland", "Kaliʻa’s wonderous adventure"),  # tab title, toolbar
+     "Kaliʻa’s Wondrous Adventure"),
+    (r"Kaliʻa’s Adventures in Wonderland", "Kaliʻa’s Wondrous Adventure"),  # tab title, toolbar
     (r'<p class="title-page__author">by Lewis Carroll</p>',
      '<p class="title-page__author">Adapted by Tata Li from Lewis Carroll</p>'),
     (r'<p class="title-page__edition">The Millennium Fulcrum Edition 3\.0</p>',

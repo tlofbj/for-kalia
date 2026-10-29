@@ -4,13 +4,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Kaliʻa’s wonderous adventure, adapted by Tata Li.">
+  <meta name="description" content="Kaliʻa’s Wondrous Adventure, adapted by Tata Li.">
   <meta name="author" content="Lewis Carroll">
   <meta name="greeting-title" content="Happy Birthday Kaliʻa!">
   <meta name="greeting-message" content="Thank you being my friend! Here is a book, I “wrote” for you... Hope you enjoy it!!!">
   <meta name="greeting-signature" content="Best wishes,&#10;Tata&#10;Oct 30, 2026">
   <meta name="greeting-button" content=":D">
-  <title>Kaliʻa’s wonderous adventure</title>
+  <title>Kaliʻa’s Wondrous Adventure</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -759,8 +759,9 @@
         border-radius: 999px;
         background: var(--color-accent);
         color: var(--color-surface);
-        font-family: var(--font-serif);
+        font-family: var(--font-playful);
         font-size: 1.75rem;
+        font-weight: 600;
         line-height: 1.3;
         cursor: pointer;
       }
@@ -905,6 +906,13 @@
       "use strict";
 
       /* ===== Helpers ===================================================== */
+
+      /**
+       * How often (ms) progress and the saved place are refreshed on a timer,
+       * on top of scroll events, which can be missed (momentum scrolling,
+       * reflow when fonts load or the text size changes, a tab closed mid-scroll).
+       */
+      const REFRESH_MS = 1000;
 
       /** Restricts `value` to the inclusive range [min, max]. */
       const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
@@ -1248,6 +1256,10 @@
             save();
           }, { passive: true });
           addEventListener("pagehide", () => this.save());
+          setInterval(() => {
+            this.#latest = this.capture();
+            this.save();
+          }, REFRESH_MS);
         }
 
         /** The place as of the last scroll — i.e. before any reflow since. */
@@ -1319,6 +1331,7 @@
           const update = oncePerFrame(() => this.#render());
           addEventListener("scroll", update, { passive: true });
           addEventListener("resize", update);
+          setInterval(update, REFRESH_MS);
           this.#render();
         }
 
@@ -1397,15 +1410,23 @@
         }
       }
 
-      /** Offers a way back to the place saved on an earlier visit, with how far in it was. */
+      /** Offers a way back to the saved place, with how far in it was. */
       class ContinueReading {
         constructor(button, position) {
-          const saved = position.saved;
+          this.button = button;
+          this.position = position;
+          button.addEventListener("click", () => position.restore(position.saved));
+          setInterval(() => this.#render(), REFRESH_MS);
+          this.#render();
+        }
+
+        /** Shows the latest saved place, so the label keeps up with reading. */
+        #render() {
+          const saved = this.position.saved;
+          this.button.hidden = !saved;
           if (!saved) return;
           const percent = Number.isFinite(saved.progress) ? ` · ${Math.round(saved.progress * 100)}%` : "";
-          button.textContent = `Continue reading${percent}`;
-          button.hidden = false;
-          button.addEventListener("click", () => position.restore(saved));
+          this.button.textContent = `Continue reading${percent}`;
         }
       }
 
@@ -1735,7 +1756,7 @@
         <path d="M4 6h16M4 12h16M4 18h10"/>
       </svg>
     </button>
-    <p class="running-head">Kaliʻa’s wonderous adventure</p>
+    <p class="running-head">Kaliʻa’s Wondrous Adventure</p>
     <div class="toolbar__actions">
       <span class="progress-label" title="How far through the book you are">0%</span>
       <button class="icon-button" type="button" popovertarget="settings-panel" aria-label="Reading settings" title="Reading settings">
@@ -1801,7 +1822,7 @@
         <span>♠</span><span class="ornament__suit--red">♥</span><span>♣</span><span class="ornament__suit--red">♦</span>
       </p>
       <h1 class="title-page__title">
-        Kaliʻa’s wonderous adventure
+        Kaliʻa’s Wondrous Adventure
       </h1>
       <p class="title-page__author">Adapted by Tata Li from Lewis Carroll</p>
       <p class="title-page__edition">Adapted from the Millennium Fulcrum Edition 3.0</p>

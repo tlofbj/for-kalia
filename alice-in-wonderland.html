@@ -755,8 +755,9 @@
         border-radius: 999px;
         background: var(--color-accent);
         color: var(--color-surface);
-        font-family: var(--font-serif);
+        font-family: var(--font-playful);
         font-size: 1.75rem;
+        font-weight: 600;
         line-height: 1.3;
         cursor: pointer;
       }
@@ -901,6 +902,13 @@
       "use strict";
 
       /* ===== Helpers ===================================================== */
+
+      /**
+       * How often (ms) progress and the saved place are refreshed on a timer,
+       * on top of scroll events, which can be missed (momentum scrolling,
+       * reflow when fonts load or the text size changes, a tab closed mid-scroll).
+       */
+      const REFRESH_MS = 1000;
 
       /** Restricts `value` to the inclusive range [min, max]. */
       const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
@@ -1244,6 +1252,10 @@
             save();
           }, { passive: true });
           addEventListener("pagehide", () => this.save());
+          setInterval(() => {
+            this.#latest = this.capture();
+            this.save();
+          }, REFRESH_MS);
         }
 
         /** The place as of the last scroll — i.e. before any reflow since. */
@@ -1315,6 +1327,7 @@
           const update = oncePerFrame(() => this.#render());
           addEventListener("scroll", update, { passive: true });
           addEventListener("resize", update);
+          setInterval(update, REFRESH_MS);
           this.#render();
         }
 
@@ -1393,15 +1406,23 @@
         }
       }
 
-      /** Offers a way back to the place saved on an earlier visit, with how far in it was. */
+      /** Offers a way back to the saved place, with how far in it was. */
       class ContinueReading {
         constructor(button, position) {
-          const saved = position.saved;
+          this.button = button;
+          this.position = position;
+          button.addEventListener("click", () => position.restore(position.saved));
+          setInterval(() => this.#render(), REFRESH_MS);
+          this.#render();
+        }
+
+        /** Shows the latest saved place, so the label keeps up with reading. */
+        #render() {
+          const saved = this.position.saved;
+          this.button.hidden = !saved;
           if (!saved) return;
           const percent = Number.isFinite(saved.progress) ? ` · ${Math.round(saved.progress * 100)}%` : "";
-          button.textContent = `Continue reading${percent}`;
-          button.hidden = false;
-          button.addEventListener("click", () => position.restore(saved));
+          this.button.textContent = `Continue reading${percent}`;
         }
       }
 
