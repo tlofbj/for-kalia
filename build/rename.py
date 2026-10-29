@@ -59,6 +59,7 @@ GIFT_DETAILS = [
     (r"Kaliʻa’s Adventures <span class=\"title-page__connective\">in</span> Wonderland",
      "Kaliʻa’s Wondrous Adventure"),
     (r"Kaliʻa’s Adventures in Wonderland", "Kaliʻa’s Wondrous Adventure"),  # tab title, toolbar
+    (r'<html lang="en">', '<html lang="en" data-headings="playful">'),  # cartoon-font headings
     (r'<p class="title-page__author">by Lewis Carroll</p>',
      '<p class="title-page__author">Adapted by Tata Li from Lewis Carroll</p>'),
     (r'<p class="title-page__edition">The Millennium Fulcrum Edition 3\.0</p>',
